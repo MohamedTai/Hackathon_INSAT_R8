@@ -57,9 +57,20 @@ if MODELS_DIR.joinpath("slotting_model.joblib").exists():
 def page_dashboard():
     st.header("📊 Dashboard")
     
-    conn = connect_db()
-    slots_df = load_slots_df(conn)
-    items_df = load_items_df(conn)
+    # Check if database exists
+    if not DB_PATH.exists():
+        st.warning("⚠️ Database not initialized. Please go to the **Training** page and click 'Start Training' first.")
+        st.info("This will generate synthetic warehouse data and train the ML model.")
+        return
+    
+    try:
+        conn = connect_db()
+        slots_df = load_slots_df(conn)
+        items_df = load_items_df(conn)
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        st.info("Go to **Training** page to initialize the database.")
+        return
     
     col1, col2, col3, col4 = st.columns(4)
     
