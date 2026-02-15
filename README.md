@@ -2,111 +2,145 @@
 
 ## Project Overview
 
-A comprehensive warehouse management system combining:
-- **Backend API** - FastAPI-based REST API for warehouse operations
-- **AI/ML Services** - Machine learning models for slot optimization and warehouse analytics
-- **Streamlit Interfaces** - Interactive dashboards for visualization and management
+A lightweight **Streamlit-based warehouse management system** with integrated machine learning for optimal slot allocation.
 
 ## Architecture
 
-### Backend (`backend/`)
-- **app.py** - Main FastAPI/Streamlit application
-- **db.py** - Database layer and ORM
-- **logic.py** - Core business logic
-- **service.py** - Service layer
-- **optimizer_ilp.py** - Integer Linear Programming optimization engine
-- **schema.py** - Data models and schemas
-- **warehouse.db** - SQLite database
+### Application (`app/`)
+- **app.py** - Main Streamlit application with 4 pages:
+  - Dashboard: Overview of warehouse inventory
+  - Optimization: ML-powered slot recommendations
+  - Training: Model training interface
+  - Analytics: Performance metrics and model evaluation
 
-### AI/ML Services (`ai/`)
-- **main.py** - Keyboard simulator for IN/OUT event testing
-- **streamlit_app.py** - ML dashboard and monitoring
-- **ml_slotting_train.py** - Model training pipeline
-- **backend_client.py** - Client for backend API
-- **config.py** - Configuration management
-- **handlers.py** - Event handlers
-- **utils.py** - Utility functions
-- **slotting_model.joblib** - Trained ML model (serialized)
+### ML Pipeline (`src/ml/`)
+- **training/** - Model training with oracle ground truth
+  - `train.py` - Core training logic and utilities
+- **evaluation/** - Model performance metrics
+  - `evaluate.py` - Accuracy and cost analysis
+- **testing/** - Unit and integration tests
+  - `test_ml.py` - Pytest test suite
+
+### Data & Models (`src/`)
+- **data/** - Synthetic warehouse data (SQLite database)
+- **models/** - Trained model artifacts (joblib)
+
+## Features
+
+### Dashboard
+- Real-time warehouse statistics
+- Slot and item inventory overview
+- Distribution analysis
+
+### Optimization
+- ML-powered slot recommendations
+- Oracle (ground truth) comparison
+- Item-slot feasibility validation
+
+### Model Training
+- Synthetic data generation
+- HistGradientBoosting model training
+- Configurable parameters
+
+### Analytics
+- Model accuracy metrics
+- Cost prediction analysis
+- Feature importance visualization
 
 ## Setup
 
 ### Requirements
 - Python 3.9+
-- pandas, numpy, scikit-learn
-- FastAPI, uvicorn
-- Streamlit
-- sqlalchemy
+- Dependencies: streamlit, pandas, numpy, scikit-learn, joblib, pytest
 
 ### Installation
 
 ```bash
-# Using a single virtual environment (recommended)
+# Create virtual environment
 python -m venv venv
 venv\Scripts\activate  # Windows
 source venv/bin/activate  # macOS/Linux
 
+# Install dependencies
 pip install -r requirements.txt
 ```
 
 ### Running the Application
 
-**Backend API:**
 ```bash
-cd backend
-python -m uvicorn app:app --host 127.0.0.1 --port 8000
+streamlit run app/app.py
 ```
 
-**AI Streamlit Dashboard:**
+The app will open at `http://localhost:8501`
+
+### Training the Model
+
+1. Go to **Training** page
+2. Adjust parameters (optional)
+3. Click "Start Training"
+4. Model will be saved to `src/models/slotting_model.joblib`
+
+### Running Tests
+
 ```bash
-cd ai
-streamlit run streamlit_app.py
+pytest src/ml/testing/test_ml.py -v
 ```
-
-**Keyboard Simulator:**
-```bash
-cd ai
-python main.py
-```
-
-## Features
-
-- **Slot Management** - Manage warehouse slots with dimensions, weight limits, and zones
-- **Product Management** - Track products with dimensions and demand forecasts
-- **ML-based Slotting** - Optimize product placement using machine learning
-- **Inventory Tracking** - Real-time inventory management
-- **Performance Metrics** - Analytics and KPI dashboards
 
 ## File Structure
 
 ```
 WarehouseMVP/
-├── backend/
-│   ├── app.py
-│   ├── db.py
-│   ├── logic.py
-│   ├── service.py
-│   ├── optimizer_ilp.py
-│   ├── schema.py
-│   ├── seed_real_db.py
-│   └── warehouse.db
-├── ai/
-│   ├── main.py
-│   ├── streamlit_app.py
-│   ├── ml_slotting_train.py
-│   ├── backend_client.py
-│   ├── config.py
-│   ├── handlers.py
-│   ├── utils.py
-│   ├── test_predict.py
-│   └── slotting_model.joblib
-├── .gitignore
-└── README.md
+├── app/
+│   └── app.py                           # Main Streamlit app
+├── src/
+│   ├── ml/
+│   │   ├── training/
+│   │   │   ├── train.py                 # Training pipeline
+│   │   │   └── __init__.py
+│   │   ├── evaluation/
+│   │   │   ├── evaluate.py              # Performance evaluation
+│   │   │   └── __init__.py
+│   │   ├── testing/
+│   │   │   ├── test_ml.py               # Test suite
+│   │   │   └── __init__.py
+│   │   └── __init__.py
+│   ├── data/                            # Data directory (auto-created)
+│   ├── models/                          # Models directory (auto-created)
+│   └── __init__.py
+├── requirements.txt
+├── README.md
+└── .gitignore
 ```
+
+## ML Model Details
+
+### Approach
+- **Algorithm**: HistGradientBoosting Regressor
+- **Task**: Predict cost of item-slot allocation
+- **Training Data**: Oracle-based cost function
+- **Features**: Item dimensions, weight, demand, priority + Slot dimensions, capacity, distance
+
+### Oracle Function
+Ground truth cost is computed as:
+```
+cost = α * distance_norm + (1 - α) * waste_norm
+α = 0.2 + 0.6 * priority
+```
+
+Where:
+- `priority` = 0.6 × demand_norm + 0.4 × order_pressure
+- `distance_norm` = normalized slot distance (0 = close, 1 = far)
+- `waste_norm` = normalized unused slot volume
+
+### Performance
+- Typical MAE: ~0.04 on test set
+- Slot match accuracy: ~80-85%
 
 ## Development Notes
 
-- Single virtual environment should be used for the entire project
-- Database is SQLite-based for simplicity
-- ML models are stored as joblib serialized objects
-- Streamlit and FastAPI run on separate ports (8501 for Streamlit, 8000 for API)
+- All code uses Streamlit for UI (no backend API)
+- Database is SQLite for simplicity
+- Models stored as joblib binary files
+- Synthetic data generation for demo (can be replaced with real data)
+- Single virtual environment for entire project
 
